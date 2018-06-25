@@ -1,7 +1,6 @@
 package com.michalkowol;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+import com.michalkowol.Configuration.Datasource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -24,11 +23,10 @@ public class DataSourceSingleton {
         private static final DataSourceSingleton INSTANCE = createDatabaseSingleton();
 
         private static DataSourceSingleton createDatabaseSingleton() {
-            Config config = ConfigFactory.load();
             HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setJdbcUrl(config.getString("datasource.jdbcUrl"));
-            hikariConfig.setUsername(config.getString("datasource.username"));
-            hikariConfig.setPassword(config.getString("datasource.password"));
+            hikariConfig.setJdbcUrl(Datasource.jdbcUrl());
+            hikariConfig.setUsername(Datasource.username());
+            hikariConfig.setPassword(Datasource.password());
             HikariDataSource dataSource = new HikariDataSource(hikariConfig);
             return new DataSourceSingleton(dataSource);
         }

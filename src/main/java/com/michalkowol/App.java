@@ -14,9 +14,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+import static com.michalkowol.Configuration.Server;
 import static com.michalkowol.Randoms.randomEmail;
 import static com.michalkowol.Randoms.randomPassword;
 import static spark.Spark.get;
+import static spark.Spark.port;
 
 class App {
 
@@ -31,6 +33,7 @@ class App {
     }
 
     private void startWeb() {
+        port(Server.port());
         get("/users", this::getUsers, objectMapper::writeValueAsString);
         get("/users/:id", this::getUserById, objectMapper::writeValueAsString);
     }
