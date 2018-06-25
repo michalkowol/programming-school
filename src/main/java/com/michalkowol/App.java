@@ -69,7 +69,7 @@ class App {
 
     private void printToConsole() {
         try (Connection connection = dataSource.getConnection()) {
-            User jan = User.findById(db, 1);
+            User jan = User.findById(connection, 1);
             if (jan != null) {
                 jan.setPassword(randomPassword());
                 jan.save(connection);
@@ -78,7 +78,7 @@ class App {
 
             User basia = User.of("basia", randomEmail(), "admin1");
             System.out.println(basia);
-            basia.save(db);
+            basia.save(connection);
             System.out.println(basia);
         } catch (SQLException e) {
             e.printStackTrace();
