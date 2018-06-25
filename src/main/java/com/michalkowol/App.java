@@ -2,6 +2,9 @@ package com.michalkowol;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michalkowol.model.User;
+import com.michalkowol.web.Page;
+import com.softwareberg.Database;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.flywaydb.core.Flyway;
 import spark.Request;
 import spark.Response;
@@ -9,6 +12,7 @@ import spark.Response;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 import static com.michalkowol.Randoms.randomEmail;
 import static com.michalkowol.Randoms.randomPassword;
@@ -17,26 +21,27 @@ import static spark.Spark.get;
 class App {
 
     private final DataSource dataSource = DataSourceSingleton.getInstance();
+    private final Database db = new Database(dataSource);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public void run() {
+    void run() {
         migrateDatabase();
         printToConsole();
         startWeb();
     }
 
     private void startWeb() {
+        get("/users", this::getUsers, objectMapper::writeValueAsString);
         get("/users/:id", this::getUserById, objectMapper::writeValueAsString);
     }
 
     private Object getUserById(Request req, Response res) {
-        int id = Integer.parseInt(req.params("id"));
-        User user = getUser(id);
         res.type("application/json");
-        return user;
+        int id = Integer.parseInt(req.params("id"));
+        return getUserById(id);
     }
 
-    private User getUser(int id) {
+    private User getUserById(int id) {
         try (Connection connection = dataSource.getConnection()) {
             return User.findById(connection, id);
         } catch (SQLException e) {
@@ -44,9 +49,24 @@ class App {
         }
     }
 
+    private Page<User> getUsers(Request req, Response res) {
+        res.type("application/json");
+        List<User> users = User.findAll(db);
+        return new Page<>(users);
+    }
+
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
+    private List<User> getUsers() {
+        try (Connection connection = dataSource.getConnection()) {
+            return User.findAll(connection);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void printToConsole() {
         try (Connection connection = dataSource.getConnection()) {
-            User jan = User.findById(connection, 1);
+            User jan = User.findById(db, 1);
             if (jan != null) {
                 jan.setPassword(randomPassword());
                 jan.save(connection);
@@ -55,7 +75,7 @@ class App {
 
             User basia = User.of("basia", randomEmail(), "admin1");
             System.out.println(basia);
-            basia.save(connection);
+            basia.save(db);
             System.out.println(basia);
         } catch (SQLException e) {
             e.printStackTrace();
